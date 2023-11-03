@@ -1,0 +1,145 @@
+@page "/registroEntrada"
+
+
+<EditForm Model="entradas">
+    <DataAnnotationsValidator />
+
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h3>Entrada de Productos empacados</h3>
+            </div>
+            <div class="card-body">
+            
+                <label>Id</label>
+                <div class="col-3">
+                    <div class="input-group mb-3">
+                        <InputNumber @bind-Value="EntradaId" class="form-control" aria-describedby="BotonBuscarid"></InputNumber>
+                        <button class="btn btn-outline-primary" @onclick="Buscar" id="BotonBuscarId"><i class="oi oi-magnifying-glass"></i></button>
+                    </div>
+                </div>
+
+                <label>Fecha</label>
+                <div class="col-3">
+                    <div class="input-group mb-3">
+                        <InputDate class="form-control" @bind-Value="entradas.Fecha" aria-describedby="FechaEntrada"></InputDate>
+                        <ValidationMessage For="@(() => entradas.Fecha)"></ValidationMessage>
+                    </div>
+                </div>
+                
+                <label>Concepto</label>
+                <div class="input-group mb-3">
+                    <InputTextArea class="form-control" @bind-Value="entradas.Concepto" aria-describedby="ConceptoEntrada"></InputTextArea>
+                    <ValidationMessage For ="@(() => entradas.Concepto)"></ValidationMessage>
+                </div>
+
+                @*Detalle Entradas*@
+                <fieldset class ="border-success border border-1">
+                    <h3>Utilizados</h3>
+                    <div>
+                        
+                        <div class="row">
+                            <div class="col">
+                                <label>Producto</label>
+                                <div class="input-group mb-3">
+                                    <InputSelect @bind-Value="opc" class="form-select">
+                                        <option value="1"></option>
+                                    
+                                    </InputSelect>
+                                </div>
+                            </div>
+
+                            <div class="col">
+                                <label>Cantidad</label>
+                                <div class="input-group mb-3">
+                                    <InputNumber @bind-Value="entradas.CantidadProducida" class="form-control" aria-describedby="CantidadEntradas"></InputNumber>
+                                    <ValidationMessage For ="@(() => entradas.CantidadProducida)"></ValidationMessage>
+                                </div>
+                            </div>
+
+                            <div class="col">
+                                <button class="btn btn-outline-primary"><i class="oi oi-plus"> Agregar</i></button>
+                            </div>
+                        </div>
+
+                        <table class="table table-bordered table-light m-1">
+                            <thead class ="thead">
+                                <tr class="table">
+                                    <th>ProductoId</th>
+                                    <th>Descripci&oacute;n</th>
+                                    <th>Cantidad</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                @foreach(var detalle in entradas.EntradasDetalles)
+                                {
+                                    <tr>
+                                        <td>@detalle.ProductoId</td>
+                                        @*<td>@detalle.Descripcion</td>*@
+                                        <td>@detalle.CantidadUtilizada</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+
+                        @*Falta el peso total*@
+
+                    </div>
+                </fieldset>
+                <br>
+                <br>
+                <fieldset class ="border-success border border-1">
+                    <h3>Producidos</h3>
+                    <div>
+                        
+                        <div class="row">
+                            <div class="col">
+                                <label>Producto</label>
+                                <div class="input-group mb-3">
+                                    <InputSelect @bind-Value="opc" class="form-select">
+                                        <option value="1"></option>
+                                    
+                                    </InputSelect>
+                                </div>
+                            </div>
+
+                            <div class="col">
+                                <label>Cantidad</label>
+                                <div class="input-group mb-3">
+                                    <InputNumber @bind-Value="entradas.CantidadProducida" class="form-control" aria-describedby="CantidadEntradas"></InputNumber>
+                                    <ValidationMessage For ="@(() => entradas.CantidadProducida)"></ValidationMessage>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </fieldset>
+                <br>
+                <div class="d-flex justify-content-center">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-outline-primary"><i class="oi oi-file">Nuevo</i></button>
+                        <button type="submit" class="btn btn-outline-success"><i class="oi oi-document">Guardar</i></button>
+                        <button type="button" class="btn btn-outline-danger"><i class="oi oi-trash">Eliminar</i></button>
+                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</EditForm>
+
+
+
+@code
+{
+    [Parameter]
+    public int EntradaId {get; set;}
+    public Entradas entradas {get; set;} = new Entradas();
+
+    public int opc {get; set;}
+
+    public async Task Buscar()
+    {
+
+    }
+
+}
