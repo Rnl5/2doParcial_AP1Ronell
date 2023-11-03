@@ -1,4 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using _2doParcial_AP1RonellIntento.Shared;
+
+namespace _2doParcial_AP1RonellIntento.Server;
 
 public class Context : DbContext
 {

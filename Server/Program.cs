@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
+using _2doParcial_AP1RonellIntento.Server;
 
 var builder = WebApplication.CreateBuilder(args);
 

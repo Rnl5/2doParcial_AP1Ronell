@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
+namespace _2doParcial_AP1RonellIntento.Shared;
 public class Productos
 {
     [Key]
