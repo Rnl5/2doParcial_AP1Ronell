@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using _2doParcial_AP1RonellIntento.Shared;
 
 namespace _2doParcial_AP1RonellIntento.Shared;
 public class EntradasDetalle
@@ -14,5 +15,5 @@ public class EntradasDetalle
     public int ProductoId {get; set;}
     [Required(ErrorMessage ="El campo {0} es obligatorio")]
     [Range(1,200, ErrorMessage ="EL dato insertado en el campo {0} debe de estar entre {1} y {2}")]
-    public float CantidadUtilizada {get; set;}
+    public int CantidadUtilizada {get; set;}
 }
