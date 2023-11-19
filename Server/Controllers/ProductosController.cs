@@ -36,7 +36,6 @@ public class ProductosController : ControllerBase
             return NotFound();
         }
         var productos = await _context.Productos
-                    .Include(p => p.EntradasDetalles)
                     .Where(p => p.ProductoId == id)
                     .FirstOrDefaultAsync();
 
