@@ -37,7 +37,7 @@ public class EntradasController : ControllerBase
             return NotFound();
         }
         var entradas = await _context.Entradas
-                    .Include(e => e.EntradasDetalles)
+                    .Include(e => e.EntradasDetalle)
                     .Where(e => e.EntradaId == id)
                     .FirstOrDefaultAsync();
 
@@ -82,20 +82,116 @@ public class EntradasController : ControllerBase
 
     // POST: api/Entradas
     // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-    [HttpPost]
-    public async Task<ActionResult<Entradas>> PostEntradas(Entradas entradas)
+    [HttpPost("{id}")]
+    public async Task<ActionResult<Entradas>> PostEntradas(int id, Entradas entradas)
     {
         if (!EntradasExists(entradas.EntradaId))
         {
+            Productos? producto = new Productos();
+            foreach (var productoUtilizado in entradas.EntradasDetalle)
+            {
+                producto = _context.Productos.Find(productoUtilizado.ProductoId);
+
+                int pruebaProducto = 0;
+                pruebaProducto = producto.Existencia - productoUtilizado.CantidadUtilizada;
+
+                if(pruebaProducto < 0)
+                {
+                    return NotFound($"No hay {producto.Descripcion} en el almacen");
+                }
+
+                if(entradas.EntradasDetalle.Count() > 3 || entradas.EntradasDetalle.Count < 3)
+                {
+                    return BadRequest();
+                }
+
+                var productoBase = await _context.Productos.FindAsync(entradas.ProductoId);
+
+                if (productoBase != null)
+                {
+                    if(productoBase.ProductoId == 5 || productoBase.ProductoId == 7)
+                    {
+
+                    }
+                    productoBase.Existencia = 0;
+                    productoBase.Existencia += entradas.CantidadProducida;
+                    _context.Productos.Update(productoBase);
+                }
+                
+                    if (producto != null)
+                    {
+                        producto.Existencia -= productoUtilizado.CantidadUtilizada;
+                        
+                        _context.Productos.Update(producto);
+                        await _context.SaveChangesAsync();
+                    }
+            }
             _context.Entradas.Add(entradas);
         }
         else
         {
+            var entradaAnterior = _context.Entradas
+                             .Include(e => e.EntradasDetalle)
+                             .AsNoTracking()
+                             .FirstOrDefault(e => e.EntradaId == entradas.EntradaId);
+
+            Productos? producto = new Productos();
+
+            if (entradaAnterior != null && entradaAnterior.EntradasDetalle != null)
+            {
+                foreach (var productoUtilizado in entradas.EntradasDetalle)
+                {
+                    producto = _context.Productos.Find(productoUtilizado.ProductoId);
+
+                    if (!productoUtilizado.Equals(productoUtilizado))
+                    {
+                        foreach (var productoproducido in entradas.EntradasDetalle)
+                        {
+                            if (productoUtilizado != null)
+                            {
+                                producto = _context.Productos.Find(productoproducido.ProductoId);
+
+                                if (productoproducido != null)
+                                {
+                                    if (producto != null)
+                                    {
+                                        producto.Existencia -= productoUtilizado.CantidadUtilizada;
+                                        producto.Existencia += entradas.CantidadProducida;
+                                        _context.Productos.Update(producto);
+                                        await _context.SaveChangesAsync();
+                                        _context.Entry(producto).State = EntityState.Detached;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        foreach (var productoproducido in entradas.EntradasDetalle)
+                        {
+                            if (productoUtilizado != null)
+                            {
+                                producto = _context.Productos.Find(productoproducido.ProductoId);
+
+                                if (productoproducido != null)
+                                {
+                                    if (producto != null)
+                                    {
+                                        await _context.SaveChangesAsync();
+                                        _context.Entry(producto).State = EntityState.Detached;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            _context.Entry(entradas).State = EntityState.Modified;
             _context.Entradas.Update(entradas);
         }
 
         await _context.SaveChangesAsync();
-
         return Ok(entradas);
     }
 
@@ -107,16 +203,75 @@ public class EntradasController : ControllerBase
         {
             return NotFound();
         }
-        var entradas = await _context.Entradas.FindAsync(id);
+
+        var entradas = await _context.Entradas
+                            .Include(e => e.EntradasDetalle)
+                            .FirstOrDefaultAsync(e => e.EntradaId == id);
+
         if (entradas == null)
         {
             return NotFound();
+        }
+
+        foreach (var productoUtilizado in entradas.EntradasDetalle)
+        {
+            var producto = await _context.Productos.FindAsync(productoUtilizado.ProductoId);
+
+            if (producto != null)
+            {
+                producto.Existencia += productoUtilizado.CantidadUtilizada;
+                producto.Existencia += entradas.CantidadProducida;
+                _context.Productos.Update(producto);
+            }
+        }
+
+        var productoBase = await _context.Productos.FindAsync(entradas.ProductoId);
+
+        if (productoBase != null)
+        {
+            productoBase.Existencia -= entradas.CantidadProducida;
+            _context.Productos.Update(productoBase);
         }
 
         _context.Entradas.Remove(entradas);
         await _context.SaveChangesAsync();
 
         return NoContent();
+    }
+
+    [HttpDelete("EliminarDetalle/{detalleId}")]
+    public async Task<IActionResult> DeleteDetalles(int detalleId)
+    {
+
+        if (detalleId < 0)
+        {
+            return BadRequest();
+        }
+        else
+        {
+            if (EntradasExists(detalleId))
+            {
+                var entradas = await _context.EntradasDetalles.FirstOrDefaultAsync(e => e.DetalleId == detalleId);
+                if (entradas is null)
+                {
+                    return NotFound();
+                }
+
+                _context.EntradasDetalles.Remove(entradas);
+            }
+            else
+            {
+                var entradas = await _context.EntradasDetalles.FirstOrDefaultAsync(e => e.DetalleId == detalleId);
+                if (entradas is null)
+                {
+                    return NotFound();
+                }
+
+                _context.EntradasDetalles.Remove(entradas);
+            }
+            await _context.SaveChangesAsync();
+        }
+        return Ok();
     }
 
     private bool EntradasExists(int id)
