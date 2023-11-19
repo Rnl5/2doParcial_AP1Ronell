@@ -1,0 +1,73 @@
+@page "/inventario"
+
+@inject HttpClient httpClient
+
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <head>
+                <h1>Consulta de Productos</h1>
+            </head>
+        </div>
+
+        <div class="card-body">
+            <body>
+                    
+                <div class = "row">
+                    <div class ="col">
+                        <label>Buscar por Id</label>
+                        <InputNumber class="form-control" @bind-Value="productoId" aria-placeholder="BusquedaId"> </InputNumber>
+                    </div>
+
+                        <div class="col">
+                           <button type ="button" class="btn btn-outline-primary" @onclick="Buscar"> <i class="oi oi-reload"> Buscar</i></button>
+                        </div>
+                </div>
+            @*VENGO AHORA*@
+
+                @if (productos is not null)
+                {
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>ProductoId</th>
+                                <th>Descricpion</th>
+                                <th>Tipo</th>
+                                <th>Existencia</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var item in productos)
+                            {
+                                <tr>
+                                    <td>@item.ProductoId</td>
+                                    <td>@item.Descripcion</td>
+                                    <td>@item.Tipo</td>
+                                    <td>@item.Existencia</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </body>
+        </div>
+
+    </div>
+</div>
+
+
+
+@code
+{
+
+    public int productoId {get; set;}
+
+    public List<Productos> productos {get; set;} = new List<Productos>(); 
+
+    public async Task Buscar()
+    {
+        productos = await httpClient.GetFromJsonAsync<List<Productos>>($"api/Productos");
+    }
+
+}
