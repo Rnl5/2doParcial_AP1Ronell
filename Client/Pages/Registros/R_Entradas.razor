@@ -294,20 +294,7 @@
                 {
                     Severity = NotificationSeverity.Error,
                     Summary = "Error al guardar",
-                    Detail = "Una o varias de las casillas se encuentran vacias",
-                    Duration = 4_000
-                };
-            notificationService.Notify(Mensaje);
-            return;
-        }
-
-        if (ValidarProductoSeleccionado())
-        {
-            Mensaje = new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Error,
-                    Summary = "Error, falta un producto",
-                    Detail = "Revise si ha insertado el mani",
+                    Detail = "Le falta ingresar uno o mas datos",
                     Duration = 4_000
                 };
             notificationService.Notify(Mensaje);
@@ -511,7 +498,7 @@
             {
                 Severity = NotificationSeverity.Info,
                 Summary = "Casillas Vacias",
-                Detail = "No se puede eliminar, debido a que no nada que eliminar de la base de datos",
+                Detail = "No se puede eliminar, debido a que no nada que eliminar",
                 Duration = 4_000
             };
         notificationService.Notify(Mensaje);
@@ -542,7 +529,8 @@
 
     public bool ValidarCasillasVacias()
     {
-        return string.IsNullOrEmpty(entradas.Concepto);
+        return string.IsNullOrEmpty(entradas.Concepto)  &&
+                entradas.EntradasDetalle.Count() <= 0;
     }
 
 
@@ -564,7 +552,7 @@
             entradas.ProductoId == 6;
     }
 
-    public bool ValidarProductoSeleccionado()
+    /*public bool ValidarProductoSeleccionado()
     {
         Productos? producto = new Productos();
         foreach (var productoUtilizado in entradas.EntradasDetalle)
@@ -577,7 +565,7 @@
 
         }
         return L_Productos.Any(p => p.Descripcion == producto.Descripcion);
-    }
+    }*/
 
     public bool ValidarPesoInsertadoMenor()
     {
