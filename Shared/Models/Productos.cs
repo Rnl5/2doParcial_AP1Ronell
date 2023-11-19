@@ -19,6 +19,6 @@ public class Productos
     [Range(0,1500, ErrorMessage ="El dato insertado debe de estar entre {1} y {2}")]
     public int Existencia {get; set;}
 
-    [ForeignKey("Productoid")]
-    public ICollection<EntradasDetalle> EntradasDetalles {get; set;} = new List<EntradasDetalle>();
+    [ForeignKey("ProductoId")]
+    public ICollection<EntradasDetalle> EntradasDetalle {get; set;} = new List<EntradasDetalle>();
 }

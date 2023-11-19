@@ -25,5 +25,5 @@ public class Entradas
     public int CantidadProducida {get; set;}
 
     [ForeignKey("EntradaId")]
-    public ICollection<EntradasDetalle> EntradasDetalles {get; set;} = new List<EntradasDetalle>();
+    public ICollection<EntradasDetalle> EntradasDetalle {get; set;} = new List<EntradasDetalle>();
 }
