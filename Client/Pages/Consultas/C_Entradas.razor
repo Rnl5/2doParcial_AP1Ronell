@@ -38,9 +38,28 @@
                         </InputSelect>
                     </div>
 
+                    <div class="col">
+                        <label>Filtrar:</label>
+                        @switch(opcFiltrado)
+                        {
+                            case 1:
+                                <InputNumber class="form-control" @bind-Value="entrada.EntradaId"></InputNumber>
+                                Conteo = 0;
+                                break;
+                            case 2:
+                                <InputText class ="form-control" @bind-Value="entrada.Concepto"></InputText>
+                                Conteo = 0;
+                                break;
+                            case 3:
+                                <InputNumber class ="form-control" @bind-Value="entrada.PesoTotal"></InputNumber>
+                                Conteo = 0;
+                                break;
+                        }
+                    </div>
+
                         <div class="col">
                            <button type ="button" class="btn btn-outline-primary" @onclick="Buscar"> <i class="oi oi-reload"> Buscar</i></button>
-                        </div>*
+                        </div>
                 </div>
 
 
@@ -63,7 +82,7 @@
                             {
                                 <tr>
                                     <td>@entrada.EntradaId</td>
-                                    <td>@entrada.Fecha</td>
+                                    <td>@entrada.Fecha.ToString("dd/MM/yyyy")</td>
                                     <td>@entrada.Concepto</td>
                                     <td>@entrada.PesoTotal</td> 
                                     <td>@entrada.CantidadProducida</td>
@@ -101,8 +120,12 @@
 
     public int opcFiltrado {get; set;}
 
+    public Entradas entrada {get; set;} = new Entradas();
+
     protected override async Task OnInitializedAsync()
     {
+        Desde.ToString("dd/MM/yyyy");
+        Hasta.ToString("dd/MM/yyyy");
         Desde = DateTime.Now.AddMonths(-1);
         Hasta = DateTime.Now;
     }
@@ -110,14 +133,25 @@
     public async Task Buscar()
     {
         entradas = await httpClient.GetFromJsonAsync<List<Entradas>>($"api/Entradas");
-        
+
+        if (Desde != default && Hasta != default)
+        {
+            entradas = entradas.Where(e => e.Fecha >= Desde.Date && e.Fecha <= Hasta).ToList();
+        }
+
         switch(opcFiltrado)
         {
             case 1://ID
-            if (entradaId >= 1)
+
+            if (Desde != default && Hasta != default)
             {
-                entradas = entradas.Where(e => e.EntradaId == entradaId).ToList();
+                entradas = entradas.Where(e => e.Fecha >= Desde.Date && e.Fecha <= Hasta).ToList();
             }
+            if (entrada.EntradaId > 0)
+            {
+                entradas = entradas.Where(e => e.EntradaId == entrada.EntradaId).ToList();
+            }
+
             break;
 
             case 2://CONCEPTO
@@ -125,13 +159,27 @@
             {
                 entradas = entradas.Where(e => e.Fecha >= Desde.Date && e.Fecha <= Hasta).ToList();
             }
+
+            if(!string.IsNullOrEmpty(entrada.Concepto))
+            {
+                entradas = entradas.Where(e => e.Concepto.ToLower().Contains(entrada.Concepto.ToLower())).ToList();
+            }
             break;
 
             case 3: //PesoTotal
+            if (Desde != default && Hasta != default)
+            {
+                entradas = entradas.Where(e => e.Fecha >= Desde.Date && e.Fecha <= Hasta).ToList();
+            }
+
+            if(entrada.PesoTotal >= 1)
+            {
+                entradas = entradas.Where(e => e.PesoTotal == entrada.PesoTotal).ToList();
+            }
+
 
             break;
         }
-
         Conteo = entradas != null ? entradas.Count : 0;
         StateHasChanged();
     }
