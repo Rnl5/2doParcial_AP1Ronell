@@ -19,6 +19,7 @@
                     <label>Id</label>
                     <div class="input-group mb-3">
                         <InputNumber class="form-control" @bind-Value ="EntradaId" aria-describedby="BotonBuscarId"></InputNumber>
+                        <ValidationMessage For="@(() => entradas.EntradaId)"></ValidationMessage>
                         <button type="button" @onclick="Buscar" class="btn btn-outline-primary"><i class="oi oi-magnifying-glass"></i></button> 
                     </div>
                 </div>
@@ -56,6 +57,7 @@
                                             }
                                         }
                                     </InputSelect>
+                                    <ValidationMessage For="@(() => entradas.ProductoId)"></ValidationMessage>
                                 </div>
                             </div>
 
@@ -93,7 +95,7 @@
                                         <td>@detalle.ProductoId</td>
                                         <td>@(DescripcionProducto(detalle.ProductoId))</td>
                                         <td>@detalle.CantidadUtilizada</td>
-                                        <td><button @onclick="@(() => RemoverDetalle(detalle))" class="btn btn-outline-danger"><i class="oi oi-trash">Eliminar</i></button></td>
+                                        <td><button @onclick="@(() => RemoverDetalle(detalle))" class="btn btn-outline-danger" type="button"><i class="oi oi-trash">Eliminar</i></button></td>
                                     </tr>
                                 }
                             </tbody>
@@ -102,6 +104,12 @@
                                     <span class="form-control">@entradas.PesoTotal gramos</span>
                                 </div>
                         </table>
+                        <div class="form-row justify-content-sm-between" aria-orientation="vertical">
+                            <div class="col-3">
+                                <label for="CantidadDetalle" class="col-form-label"><strong>Num. Productos</strong>&nbsp;</label>
+                                <input id="CantidadDetalle" @bind-value="@ConteoDetalles" disabled class="form-control" />
+                            </div>
+                        </div>
                     </div>
                 </fieldset>
 
@@ -123,6 +131,7 @@
                                             }
                                         }
                                     </InputSelect>
+                                    <ValidationMessage For="@(() => entradas.ProductoId)"></ValidationMessage>
                                 </div>
                             </div>
 
@@ -130,6 +139,7 @@
                                 <label>Cantidad</label>
                                 <div class="input-group mb-3">
                                     <InputNumber class="form-control" @bind-Value="entradas.CantidadProducida" placeholder="Cantidad producida"></InputNumber>
+                                    <ValidationMessage For="@(() => entradas.CantidadProducida)"></ValidationMessage>
                                 </div>
                             </div>
                         </div>
@@ -166,8 +176,6 @@
 
     public int cantidadProducida {get; set;} = 0;
 
-    //public int pesoTotal {get; set;}
-
     public string ValidacionD {get; set;} = string.Empty;
 
     public Productos producto {get; set;} = new Productos();
@@ -179,6 +187,8 @@
     public EntradasDetalle entradasDetalle {get; set;} = new EntradasDetalle();
 
     public NotificationMessage Mensaje {get; set;} = new NotificationMessage();
+
+    public int ConteoDetalles {get; set;}
 
     protected override async Task OnInitializedAsync()
     {
@@ -203,7 +213,20 @@
 
     public async Task Buscar()
     {
-        var entradaEncontrada = await httpClient.GetFromJsonAsync<Entradas>($"api/Entradas/{entradas.EntradaId}");
+        if (Validar())
+        {
+            Mensaje = new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Error, Id o Fecha incorrecto/s",
+                    Detail = "Revise si ha insertado correctamente el Id y/o la fecha",
+                    Duration = 4_000
+                };
+            notificationService.Notify(Mensaje);
+            return;
+        }
+
+        var entradaEncontrada = await httpClient.GetFromJsonAsync<Entradas>($"api/Entradas/{EntradaId}");
 
         suma = 0;
         entradas.PesoTotal = 0;
@@ -220,9 +243,10 @@
                 suma += entradaD.CantidadUtilizada;
                 entradas.PesoTotal = suma;
             }
+            ConteoDetalles = entradas.EntradasDetalle != null ? entradas.EntradasDetalle.Count() : 0;
 
         }
-        else
+        else if(this.entradas == null)
         {
             Mensaje = new NotificationMessage 
             {
@@ -254,25 +278,26 @@
                 {
                     Severity = NotificationSeverity.Error,
                     Summary = "Error al guardar",
-                    Detail = "El peso debe de ser mayor a 89 gramos",
+                    Detail = "La opcion insertada es incorrecta o el peso es menor a 90 gramos",
                     Duration = 4_000
                 };
                 notificationService.Notify(Mensaje);
                 return;
             }
 
-            else if(ValidarPesoMediaLibra() && entradas.PesoTotal > 100)
+            else if (ValidarPesoMediaLibra())
             {
-                Mensaje = new NotificationMessage 
-                {
-                    Severity = NotificationSeverity.Error,
-                    Summary = "Error al guardar",
-                    Detail = "El peso debe de ser mayor a 225 gramos, debido a que el paquete no cumpliria con el peso correcto (ESTAFADOR)",
-                    Duration = 4_000
-                };
+                Mensaje = new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Error,
+                        Summary = "Error al guardar",
+                        Detail = "El peso debe de ser mayor a 225 gramos, debido a que el paquete no cumpliria con el peso correcto (ESTAFADOR)",
+                        Duration = 4_000
+                    };
                 notificationService.Notify(Mensaje);
                 return;
             }
+
         }
 
         if(Validar())
@@ -301,9 +326,22 @@
             return;
         }
 
+            /*if(ValidarProducido())
+            {
+            Mensaje = new NotificationMessage
+                {
+                Severity = NotificationSeverity.Error,
+                Summary = "Error al guardar",
+                Detail = "Debe de insertar los productos requeridos y la cantidad producidad",
+            Duration = 4_000
+            };
+            notificationService.Notify(Mensaje);
+            return;
+        }*/
+
         try{
             using var response = await httpClient.PostAsJsonAsync<Entradas>($"api/Entradas/{entradas.EntradaId}", entradas);
-            
+
             if(!response.IsSuccessStatusCode)
             {
                 if (response.StatusCode == HttpStatusCode.NotFound)
@@ -319,7 +357,20 @@
                     return;
                 }
 
-                if (response.StatusCode == HttpStatusCode.BadRequest)
+                if (response.StatusCode == HttpStatusCode.BadRequest && entradas.ProductoId == 0 || entradas.CantidadProducida <= 0 || producto.ProductoId == 0)
+                {
+                    Mensaje = new NotificationMessage
+                        {
+                            Severity = NotificationSeverity.Error,
+                            Summary = "Error, debe de llenar detalles",
+                            Detail = $"Debe de rellenar todos los campos",
+                            Duration = 5_000
+                        };
+                    notificationService.Notify(Mensaje);
+                    return;
+                }
+
+                else if (response.StatusCode == HttpStatusCode.BadRequest)
                 {
                     Mensaje = new NotificationMessage
                         {
@@ -335,7 +386,7 @@
             else
             {
                 var entradaDevuelta = await response.Content.ReadFromJsonAsync<Entradas>();
-                
+
                 if(entradaDevuelta is not null)
                 {
                     entradas = entradaDevuelta;
@@ -344,43 +395,43 @@
 
                     entradas.CantidadProducida = cantidadProducida;
 
-                    
+
                     /* Mensaje = new NotificationMessage 
-                    {
+                        {
                         Severity = NotificationSeverity.Success,
                         Summary = "Exito al guardar",
                         Detail = "Ha guardado la entrada correctamente",
                         Duration = 4_000
-                    };
+                };
                 notificationService.Notify(Mensaje);  */
 
 
-                if(!ValidarPesoInsertadoMenor())
-                {
-                    Mensaje = new NotificationMessage 
+                    if(ValidarPesoInsertadoMenor())
+                    {
+                        Mensaje = new NotificationMessage 
                     {
                         Severity = NotificationSeverity.Success,
                         Summary = "Exito al guardar",
                         Detail = "Ha guardado un mixto de 0.2 libras",
                         Duration = 4_000
                     };
-                    notificationService.Notify(Mensaje);
-                    return;
-                }
+                        notificationService.Notify(Mensaje);
+                        return;
+                    }
 
-                else if(!ValidarPesoInsertadoMayor())
-                {
-                    Mensaje = new NotificationMessage 
+                    else if(ValidarPesoInsertadoMayor())
+                    {
+                        Mensaje = new NotificationMessage 
                     {
                         Severity = NotificationSeverity.Success,
                         Summary = "Exito al guardar",
                         Detail = "Ha guardadod un mixto de 0.5 libras",
                         Duration = 4_000
                     };
-                notificationService.Notify(Mensaje); 
+                        notificationService.Notify(Mensaje); 
+                    }
                 }
             }
-        }
 
         }catch(Exception e)
         {
@@ -412,6 +463,7 @@
             suma += entradaD.CantidadUtilizada;
             entradas.PesoTotal = suma;
         }
+        ConteoDetalles = entradas.EntradasDetalle != null ? entradas.EntradasDetalle.Count() : 0;
     }
 
     public string DescripcionProducto(int productoId)
@@ -452,9 +504,9 @@
                     Duration = 4_000
                 };
                 notificationService.Notify(Mensaje);
-                return;
 
                 entradas.PesoTotal = entradas.EntradasDetalle.Sum(e => e.CantidadUtilizada);
+                return;
             }
         }
         else if(detalleRemover.DetalleId == 0)
@@ -462,12 +514,13 @@
             productoSeleccionado = detalleRemover.ProductoId;
             cantidadUtilizada = detalleRemover.CantidadUtilizada;
             entradas.EntradasDetalle.Remove(detalleRemover);
-            foreach (var entradaD in entradas.EntradasDetalle)
-            {
-                suma -= entradaD.CantidadUtilizada;
-                suma = entradaD.CantidadUtilizada;
-                entradas.PesoTotal = suma;
-            }
+
+            suma -= cantidadUtilizada;
+            //suma = entradas.PesoTotal;
+            entradas.PesoTotal = suma;
+
+
+            ConteoDetalles = entradas.EntradasDetalle != null ? entradas.EntradasDetalle.Count() : 0;
         }
     }
 
@@ -501,8 +554,8 @@
                 Detail = "No se puede eliminar, debido a que no nada que eliminar",
                 Duration = 4_000
             };
-        notificationService.Notify(Mensaje);
-        return;
+            notificationService.Notify(Mensaje);
+            return;
         }
 
         using var response = await httpClient.DeleteAsync($"api/Entradas/{entradas.EntradaId}");
@@ -533,39 +586,25 @@
                 entradas.EntradasDetalle.Count() <= 0;
     }
 
-
     public bool Validar()
     {
-        return entradas.EntradaId < 0 ||
+        return EntradaId < 0 ||
                 entradas.Fecha > DateTime.Now;
     }
 
     public bool ValidarPesoMenor()
     {
-        return entradas.PesoTotal < 90;
+        return entradas.PesoTotal < 90 &&
+                entradas.ProductoId == 5 ||
+                entradas.ProductoId == 6;
     }
 
     public bool ValidarPesoMediaLibra()
     {
-        return entradas.PesoTotal < 226 && 
-            entradas.ProductoId == 5 || 
-            entradas.ProductoId == 6;
+        return entradas.PesoTotal >= 226 &&
+                entradas.PesoTotal <= 250 ||
+            entradas.ProductoId != 7;
     }
-
-    /*public bool ValidarProductoSeleccionado()
-    {
-        Productos? producto = new Productos();
-        foreach (var productoUtilizado in entradas.EntradasDetalle)
-        {
-            //producto = productoUtilizado.ProductoId;
-            if (producto != null)
-            {
-                producto.Existencia -= productoUtilizado.CantidadUtilizada;
-            }
-
-        }
-        return L_Productos.Any(p => p.Descripcion == producto.Descripcion);
-    }*/
 
     public bool ValidarPesoInsertadoMenor()
     {
@@ -577,5 +616,22 @@
     {
         return entradas.PesoTotal >= 226 &&
                 entradas.PesoTotal < 250; 
+    }
+
+    public bool ValidarProducido()
+    {
+        ValidacionD = string.Empty;
+
+        if(entradas.ProductoId <= 0)
+        {
+            ValidacionD = "El producto producido es obligatorio";
+        }
+
+        if(entradas.CantidadProducida <= 0)
+        {
+            ValidacionD = "La cantidad producida es obligatoria";
+        }
+
+        return ValidacionD.Length == 0;
     }
 }
