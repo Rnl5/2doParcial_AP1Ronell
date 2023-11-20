@@ -19,6 +19,7 @@ public class Entradas
     public int PesoTotal {get; set;}
 
     [ForeignKey("ProductoId")]
+    [Required(ErrorMessage ="El campo Producto es obligatorio")]
     public int ProductoId {get; set;}
 
     [Required(ErrorMessage ="El campo {0} es obligatorio")]
