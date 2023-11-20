@@ -285,7 +285,7 @@
                 return;
             }
 
-            else if (ValidarPesoMediaLibra())
+            if (ValidarPesoMediaLibra())
             {
                 Mensaje = new NotificationMessage
                     {
@@ -326,18 +326,18 @@
             return;
         }
 
-            /*if(ValidarProducido())
-            {
+        /*if(ValidarProducido())
+        {
             Mensaje = new NotificationMessage
-                {
-                Severity = NotificationSeverity.Error,
-                Summary = "Error al guardar",
-                Detail = "Debe de insertar los productos requeridos y la cantidad producidad",
-            Duration = 4_000
-            };
-            notificationService.Notify(Mensaje);
-            return;
-        }*/
+            {
+            Severity = NotificationSeverity.Error,
+            Summary = "Error al guardar",
+            Detail = "Debe de insertar los productos requeridos y la cantidad producidad",
+        Duration = 4_000
+        };
+        notificationService.Notify(Mensaje);
+        return;
+    }*/
 
         try{
             using var response = await httpClient.PostAsJsonAsync<Entradas>($"api/Entradas/{entradas.EntradaId}", entradas);
@@ -396,40 +396,40 @@
                     entradas.CantidadProducida = cantidadProducida;
 
 
-                    /* Mensaje = new NotificationMessage 
+                    Mensaje = new NotificationMessage 
                         {
                         Severity = NotificationSeverity.Success,
                         Summary = "Exito al guardar",
                         Detail = "Ha guardado la entrada correctamente",
                         Duration = 4_000
                 };
-                notificationService.Notify(Mensaje);  */
+                    notificationService.Notify(Mensaje); 
 
 
-                    if(ValidarPesoInsertadoMenor())
+                    /*if(ValidarPesoInsertadoMenor())
                     {
-                        Mensaje = new NotificationMessage 
+                    Mensaje = new NotificationMessage 
                     {
-                        Severity = NotificationSeverity.Success,
-                        Summary = "Exito al guardar",
-                        Detail = "Ha guardado un mixto de 0.2 libras",
-                        Duration = 4_000
+                    Severity = NotificationSeverity.Success,
+                    Summary = "Exito al guardar",
+                    Detail = "Ha guardado un mixto de 0.2 libras",
+                    Duration = 4_000
                     };
-                        notificationService.Notify(Mensaje);
-                        return;
+                    notificationService.Notify(Mensaje);
+                return;
                     }
 
-                    else if(ValidarPesoInsertadoMayor())
+                else if(ValidarPesoInsertadoMayor())
+                {
+                Mensaje = new NotificationMessage 
                     {
-                        Mensaje = new NotificationMessage 
-                    {
-                        Severity = NotificationSeverity.Success,
-                        Summary = "Exito al guardar",
-                        Detail = "Ha guardadod un mixto de 0.5 libras",
-                        Duration = 4_000
+                    Severity = NotificationSeverity.Success,
+                    Summary = "Exito al guardar",
+                    Detail = "Ha guardadod un mixto de 0.5 libras",
+                    Duration = 4_000
                     };
-                        notificationService.Notify(Mensaje); 
-                    }
+                    notificationService.Notify(Mensaje); 
+                }*/
                 }
             }
 
@@ -594,16 +594,16 @@
 
     public bool ValidarPesoMenor()
     {
-        return entradas.PesoTotal < 90 &&
-                entradas.ProductoId == 5 ||
-                entradas.ProductoId == 6;
+        return entradas.PesoTotal < 90;
+        //entradas.ProductoId == 5 ||
+                //entradas.ProductoId == 6;
     }
 
     public bool ValidarPesoMediaLibra()
     {
-        return entradas.PesoTotal >= 226 &&
-                entradas.PesoTotal <= 250 ||
-            entradas.ProductoId != 7;
+        return entradas.PesoTotal < 226 &&
+                entradas.PesoTotal > 250;
+        //entradas.ProductoId != 7;
     }
 
     public bool ValidarPesoInsertadoMenor()
