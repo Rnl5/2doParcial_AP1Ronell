@@ -43,7 +43,7 @@ public class EntradasController : ControllerBase
 
         if (entradas == null)
         {
-            return NotFound();
+            return NotFound("Esta entrada no existe");
         }
 
         return entradas;
@@ -88,6 +88,12 @@ public class EntradasController : ControllerBase
         if (!EntradasExists(entradas.EntradaId))
         {
             Productos? producto = new Productos();
+
+            if (entradas.ProductoId == 0 || entradas.CantidadProducida <= 0 || entradas.EntradasDetalle.Count() <= 0)
+            {
+                return BadRequest("Debe de rellenar todos los campos");
+            }
+
             foreach (var productoUtilizado in entradas.EntradasDetalle)
             {
                 producto = _context.Productos.Find(productoUtilizado.ProductoId);
@@ -143,6 +149,19 @@ public class EntradasController : ControllerBase
                 {
                     producto = _context.Productos.Find(productoUtilizado.ProductoId);
 
+                    int pruebaProducto = 0;
+                    pruebaProducto = producto.Existencia - productoUtilizado.CantidadUtilizada;
+
+                    if (pruebaProducto < 0)
+                    {
+                        return NotFound($"No hay {producto.Descripcion} en el almacen");
+                    }
+
+                    if (entradas.EntradasDetalle.Count() > 3 || entradas.EntradasDetalle.Count < 3)
+                    {
+                        return BadRequest();
+                    }
+
                     if (!productoUtilizado.Equals(productoUtilizado))
                     {
                         foreach (var productoproducido in entradas.EntradasDetalle)
@@ -165,11 +184,12 @@ public class EntradasController : ControllerBase
                             }
                         }
                     }
+
                     else
                     {
                         foreach (var productoproducido in entradas.EntradasDetalle)
                         {
-                            if (productoUtilizado != null)
+                            if (productoproducido != null)
                             {
                                 producto = _context.Productos.Find(productoproducido.ProductoId);
 
@@ -177,6 +197,9 @@ public class EntradasController : ControllerBase
                                 {
                                     if (producto != null)
                                     {
+                                        producto.Existencia -= productoproducido.CantidadUtilizada;
+                                        //producto.Existencia += entradas.CantidadProducida;
+                                        _context.Productos.Update(producto);
                                         await _context.SaveChangesAsync();
                                         _context.Entry(producto).State = EntityState.Detached;
                                     }
@@ -185,6 +208,7 @@ public class EntradasController : ControllerBase
                         }
                     }
                 }
+   
             }
 
             _context.Entry(entradas).State = EntityState.Modified;
@@ -249,16 +273,21 @@ public class EntradasController : ControllerBase
         }
         else
         {
-            if (EntradasExists(detalleId))
+            if (DetalleExists(detalleId))
             {
                 var entradas = await _context.EntradasDetalles.FirstOrDefaultAsync(e => e.DetalleId == detalleId);
-                if (entradas is null)
-                {
-                    return NotFound();
-                }
+                
+                    var producto = await _context.Productos.FindAsync(entradas.ProductoId);
 
+                    if (entradas is null)
+                    {
+                            return NotFound();
+                    }
+                
                 _context.EntradasDetalles.Remove(entradas);
+                producto.Existencia += entradas.CantidadUtilizada;
             }
+
             else
             {
                 var entradas = await _context.EntradasDetalles.FirstOrDefaultAsync(e => e.DetalleId == detalleId);
@@ -268,14 +297,20 @@ public class EntradasController : ControllerBase
                 }
 
                 _context.EntradasDetalles.Remove(entradas);
+                //producto.Existencia += productoUtilizado.CantidadUtilizada;
             }
             await _context.SaveChangesAsync();
         }
-        return Ok();
+        return Ok(detalleId);
     }
 
     private bool EntradasExists(int id)
     {
         return (_context.Entradas?.Any(e => e.EntradaId == id)).GetValueOrDefault();
+    }
+
+    private bool DetalleExists(int detalleId)
+    {
+        return (_context.EntradasDetalles?.Any(ed => ed.DetalleId == detalleId)).GetValueOrDefault();
     }
 }
