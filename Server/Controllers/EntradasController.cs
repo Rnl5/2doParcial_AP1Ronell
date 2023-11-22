@@ -89,6 +89,8 @@ public class EntradasController : ControllerBase
         {
             Productos? producto = new Productos();
 
+            var productoBase = await _context.Productos.FindAsync(entradas.ProductoId);
+
             if (entradas.ProductoId == 0 || entradas.CantidadProducida <= 0 || entradas.EntradasDetalle.Count() <= 0)
             {
                 return BadRequest("Debe de rellenar todos los campos");
@@ -111,17 +113,17 @@ public class EntradasController : ControllerBase
                     return BadRequest();
                 }
 
-                var productoBase = await _context.Productos.FindAsync(entradas.ProductoId);
+                //var productoBase = await _context.Productos.FindAsync(entradas.ProductoId);
 
                 if (productoBase != null)
                 {
-                    if(productoBase.ProductoId == 5 || productoBase.ProductoId == 7)
+                    /*if(productoBase.ProductoId == 5 || productoBase.ProductoId == 7)
                     {
 
                     }
-                    productoBase.Existencia = 0;
+                    //productoBase.Existencia = 0;
                     productoBase.Existencia += entradas.CantidadProducida;
-                    _context.Productos.Update(productoBase);
+                    _context.Productos.Update(productoBase);*/
                 }
                 
                     if (producto != null)
@@ -132,6 +134,8 @@ public class EntradasController : ControllerBase
                         await _context.SaveChangesAsync();
                     }
             }
+            productoBase.Existencia += entradas.CantidadProducida;
+            _context.Productos.Update(productoBase);
             _context.Entradas.Add(entradas);
         }
         else
@@ -143,27 +147,48 @@ public class EntradasController : ControllerBase
 
             Productos? producto = new Productos();
 
+            //EntradasDetalle detalle = new EntradasDetalle();
+
             if (entradaAnterior != null && entradaAnterior.EntradasDetalle != null)
             {
                 foreach (var productoUtilizado in entradas.EntradasDetalle)
                 {
                     producto = _context.Productos.Find(productoUtilizado.ProductoId);
 
-                    int pruebaProducto = 0;
-                    pruebaProducto = producto.Existencia - productoUtilizado.CantidadUtilizada;
-
-                    if (pruebaProducto < 0)
-                    {
-                        return NotFound($"No hay {producto.Descripcion} en el almacen");
-                    }
+                    var detalle = entradaAnterior.EntradasDetalle.FirstOrDefault(d => d.DetalleId == productoUtilizado.DetalleId);
 
                     if (entradas.EntradasDetalle.Count() > 3 || entradas.EntradasDetalle.Count < 3)
                     {
                         return BadRequest();
                     }
-
-                    if (!productoUtilizado.Equals(productoUtilizado))
+                    if (detalle != null)
                     {
+                        _context.Entry(productoUtilizado).State = EntityState.Modified;
+                    }
+                }
+
+                foreach (var productoUtilizadoD in entradas.EntradasDetalle)
+                {
+                    var detalle = entradaAnterior.EntradasDetalle.FirstOrDefault(d => d.DetalleId == productoUtilizadoD.DetalleId);
+
+                    if(detalle == null)
+                    {
+                        producto.Existencia -= productoUtilizadoD.CantidadUtilizada;
+                        _context.Entry(productoUtilizadoD).State = EntityState.Modified;
+                        _context.Productos.Update(producto);
+                        _context.EntradasDetalles.Add(productoUtilizadoD);
+                    }
+                }   
+                    /*else
+                    {
+                        int pruebaProducto = 0;
+                        pruebaProducto = producto.Existencia - productoUtilizado.CantidadUtilizada;
+
+                        if (pruebaProducto < 0)
+                        {
+                            return NotFound($"No hay {producto.Descripcion} en el almacen");
+                        }
+
                         foreach (var productoproducido in entradas.EntradasDetalle)
                         {
                             if (productoUtilizado != null)
@@ -182,34 +207,35 @@ public class EntradasController : ControllerBase
                                     }
                                 }
                             }
-                        }
-                    }
+                        }*/
 
-                    else
+                }
+
+            /*foreach (var productoUtilizado in entradas.EntradasDetalle)
+            {
+                if (!productoUtilizado.Equals(entradas.EntradasDetalle.Where(p => p.DetalleId == productoUtilizado.DetalleId)))
+                {
+                    foreach (var productoproducido in entradas.EntradasDetalle)
                     {
-                        foreach (var productoproducido in entradas.EntradasDetalle)
+                        if (productoproducido != null)
                         {
+                            producto = _context.Productos.Find(productoproducido.ProductoId);
+
                             if (productoproducido != null)
                             {
-                                producto = _context.Productos.Find(productoproducido.ProductoId);
-
-                                if (productoproducido != null)
+                                if (producto != null)
                                 {
-                                    if (producto != null)
-                                    {
-                                        producto.Existencia -= productoproducido.CantidadUtilizada;
-                                        //producto.Existencia += entradas.CantidadProducida;
-                                        _context.Productos.Update(producto);
-                                        await _context.SaveChangesAsync();
-                                        _context.Entry(producto).State = EntityState.Detached;
-                                    }
+                                    //producto.Existencia -= productoproducido.CantidadUtilizada;
+                                    //producto.Existencia += entradas.CantidadProducida;
+                                    _context.Productos.Update(producto);
+                                    await _context.SaveChangesAsync();
+                                    _context.Entry(producto).State = EntityState.Detached;
                                 }
                             }
                         }
                     }
                 }
-   
-            }
+            }*/
 
             _context.Entry(entradas).State = EntityState.Modified;
             _context.Entradas.Update(entradas);
@@ -236,6 +262,7 @@ public class EntradasController : ControllerBase
         {
             return NotFound();
         }
+        var productoBase = await _context.Productos.FindAsync(entradas.ProductoId);
 
         foreach (var productoUtilizado in entradas.EntradasDetalle)
         {
@@ -244,12 +271,10 @@ public class EntradasController : ControllerBase
             if (producto != null)
             {
                 producto.Existencia += productoUtilizado.CantidadUtilizada;
-                producto.Existencia += entradas.CantidadProducida;
                 _context.Productos.Update(producto);
             }
         }
 
-        var productoBase = await _context.Productos.FindAsync(entradas.ProductoId);
 
         if (productoBase != null)
         {
@@ -312,5 +337,10 @@ public class EntradasController : ControllerBase
     private bool DetalleExists(int detalleId)
     {
         return (_context.EntradasDetalles?.Any(ed => ed.DetalleId == detalleId)).GetValueOrDefault();
+    }
+
+    private bool CantidadUExits(int cantidadU)
+    {
+        return (_context.EntradasDetalles?.Any(c => c.CantidadUtilizada == cantidadU)).GetValueOrDefault();
     }
 }
